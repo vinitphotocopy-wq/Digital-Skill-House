@@ -594,9 +594,9 @@ function checkout(p) {
   const nm = h('input', {id:'cn', autocomplete:'name'});
   const em = h('input', {id:'ce', type:'email', autocomplete:'email'});
   const form = h('div', {},
-    h('div', {class:'pah('div', {class:'panel'}, h('b', {}, p.name), h('p', {class:'muted'}, 'Seller: ' + storeOf(p.store).name), h('h2', {}, inr(p.price))),
+    h('div', {class:'panel'}, h('b', {}, p.name), h('p', {class:'muted'}, 'Seller: ' + storeOf(p.store).name), h('h2', {}, inr(p.price))),
     note('Online payment is not enabled yet. Placing an order request does not charge you.'),
-    field('Your name', nm, 'h('p', {}, h('span', {class:'chip off'}, 'Payment: pending'), ' ', h('span', {class:'chip bad'}, 'Download: locked')),cn'),
+    field('Your name', nm, 'cn'),
     field('Email', em, 'ce'),
     h('button', {class:'btn', onclick:e => {
       const a = setErr('cn', nm.value.trim() ? '' : 'Enter your name.');
@@ -647,4 +647,285 @@ function overview() {
     note('Orders, sales and views are sample figures for layout preview.'),
     h('div', {class:'stats'}, st.map(x => h('div', {class:'stat'}, h('b', {}, x[1]), h('small', {class:'muted'}, x[0])))),
     h('div', {class:'row'},
-      h('b
+      h('button', {class:'btn', onclick:() => go('dash/add')}, 'Add product'),
+      h('button', {class:'btn ghost', onclick:() => go('store/me')}, 'Preview store')));
+}
+function storeForm() {
+  const first = !S.store.saved;
+  let logo = MEM.logo;
+  const nm = h('input', {id:'sn', value:S.store.name});
+  const ds = h('textarea', {id:'sd'}, S.store.desc);
+  const up = h('input', {id:'su', value:S.store.upi, placeholder:'name@bank'});
+  const pk = picker([[1, 1]], logo, u => { logo = u; });
+  return h('div', {},
+    h('h1', {}, first ? 'Set up your store' : 'My Store'),
+    first ? h('p', {class:'muted'}, 'Add your store details to start publishing products.') : '',
+    field('Store name', h('div', {}, nm, counter(nm, 40)), 'sn'),
+    h('div', {class:'field'}, h('label', {}, 'Store logo (square, 1:1)'), pk),
+    field('Store description', h('div', {}, ds, counter(ds, 200)), 'sd'),
+    field('UPI ID', up, 'su'),
+    note('Saving a UPI ID does not verify payments. Payment collection needs a payment provider and backend.'),
+    // FUTURE PAYMENT INTEGRATION PLACEHOLDER: connect seller payouts/payments through a secure backend.
+    h('div', {class:'row'},
+      h('button', {class:'btn', onclick:() => {
+        let ok = setErr('sn', nm.value.trim() ? '' : 'Store name is required.');
+        ok = setErr('sd', ds.value.trim() ? '' : 'Store description is required.') && ok;
+        ok = setErr('su', !up.value.trim() || UPI_RE.test(up.value.trim()) ? '' : 'UPI ID should look like name@bank.') && ok;
+        if (!ok) return;
+        Object.assign(S.store, {name:nm.value.trim(), desc:ds.value.trim(), upi:up.value.trim(), saved:true});
+        MEM.logo = logo; save(); toast('Store saved'); go('dash/overview');
+      }}, 'Save store'),
+      h('button', {class:'btn ghost', onclick:() => go('store/me')}, 'Preview store'),
+      h('button', {class:'btn ghost', onclick:() => render(true)}, 'Cancel changes')));
+}
+function productForm(id) {
+  const ed = id ? S.mine.find(p => p.id === id) : null;
+  const d = ed ? Object.assign({}, ed, {kw:[...ed.kw]}) : {name:'', desc:'', kw:[], cat:S.cats[0], price:'', file:''};
+  let img = ed ? MEM.imgs[ed.id] : null;
+  const nm = h('input', {id:'pn', value:d.name});
+  const ds = h('textarea', {id:'pd'}, d.desc);
+  const pr = h('input', {id:'pp', type:'number', min:1, step:'any', value:d.price});
+  const tags = h('div');
+  const ki = h('input', {id:'pk', placeholder:'Type keywords, press comma or Enter'});
+  const fn = h('p', {class:'muted'}, d.file || 'No file selected');
+  function drawTags() {
+    tags.replaceChildren(d.kw.map((k, i) => h('span', {class:'tag'}, k,
+      h('button', {type:'button', 'aria-label':'Remove ' + k, onclick:() => { d.kw.splice(i, 1); drawTags(); }}, '\u00D7'))));
+  }
+  function addKw() {
+    ki.value.split(',').map(s => s.trim().toLowerCase()).filter(s => s && !d.kw.includes(s)).forEach(s => d.kw.push(s));
+    ki.value = ''; drawTags();
+  }
+  ki.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addKw(); } });
+  ki.addEventListener('blur', addKw);
+  drawTags();
+  const cs = h('select', {id:'pc'}, S.cats.map(c => h('option', {value:c, selected:c === d.cat}, c)));
+  const nc = h('input', {placeholder:'New category', 'aria-label':'New category'});
+  const fi = h('input', {type:'file', class:'sr', 'aria-label':'Product file', onchange:e => {
+    const f = e.target.files[0];
+    if (f) { d.file = f.name; fn.textContent = f.name; }
+  }});
+  const st = h('select', {id:'ps'}, ['draft', 'published'].map(s => h('option', {value:s, selected:(ed ? ed.status : 'draft') === s}, s === 'draft' ? 'Draft' : 'Published')));
+  const pk = picker([[16, 9], [1, 1]], img, u => { img = u; });
+  function collect(status, strict) {
+    addKw();
+    let ok = setErr('pn', nm.value.trim() ? '' : 'Product name is required.');
+    ok = setErr('pd', ds.value.trim() ? '' : 'Description is required.') && ok;
+    ok = setErr('pp', +pr.value > 0 ? '' : 'Enter a price above \u20B90.') && ok;
+    if (strict) ok = setErr('pi', img ? '' : 'Add a 16:9 or 1:1 image before publishing.') && ok;
+    return ok ? {name:nm.value.trim(), desc:ds.value.trim(), price:+pr.value, cat:cs.value, kw:d.kw, file:d.file, status:status} : null;
+  }
+  function commit(status) {
+    const rec = collect(status, status === 'published');
+    if (!rec) return;
+    if (ed) { Object.assign(ed, rec); MEM.imgs[ed.id] = img; }
+    else {
+      const n = Object.assign({}, rec, {id:'u' + Date.now(), created:Date.now(), store:'me'});
+      S.mine.unshift(n); MEM.imgs[n.id] = img;
+    }
+    save(); toast(status === 'published' ? 'Product published' : 'Draft saved'); go('dash/products');
+  }
+  return h('div', {},
+    h('h1', {}, ed ? 'Edit product' : 'Add product'),
+    h('div', {class:'field'}, h('label', {}, 'Product image (16:9 or 1:1)'), pk,
+      h('small', {class:'muted'}, 'Images are kept for this browser session only.'),
+      h('div', {class:'err', id:'e-pi', role:'alert'})),
+    field('Product name', h('div', {}, nm, counter(nm, 60)), 'pn'),
+    field('Description', h('div', {}, ds, counter(ds, 500)), 'pd'),
+    field('Keywords', h('div', {}, ki, tags), 'pk'),
+    field('Category', h('div', {class:'row'}, cs,
+      h('div', {class:'row'}, nc, h('button', {type:'button', class:'btn ghost sm', onclick:() => {
+        const v = nc.value.trim();
+        if (v && !S.cats.includes(v)) { S.cats.push(v); cs.append(h('option', {value:v, selected:true}, v)); save(); }
+        nc.value = '';
+      }}, 'Add category'))), 'pc'),
+    field('Price (INR)', pr, 'pp'),
+    h('div', {class:'field'}, h('label', {}, 'Download file'), fn,
+      h('div', {class:'row'},
+        h('button', {type:'button', class:'btn ghost sm', onclick:() => fi.click()}, 'Choose or replace file'),
+        h('button', {type:'button', class:'btn ghost sm', onclick:() => { d.file = ''; fn.textContent = 'No file selected'; }}, 'Remove file')),
+      fi,
+      h('small', {class:'muted'}, 'Selecting a file here does not upload or host it. Secure file storage and delivery need a backend.')),
+    field('Status', st, 'ps'),
+    h('div', {class:'row'},
+      h('button', {class:'btn ghost', onclick:() => commit('draft')}, 'Save draft'),
+      h('button', {class:'btn', onclick:() => commit('published')}, 'Publish product'),
+      h('button', {class:'btn ghost', onclick:() => {
+        const r = collect(st.value, false);
+        if (r) modal('Preview', card(Object.assign({}, r, {id: ed ? ed.id : 'preview', store:'me', sold:0, pop:0, created:Date.now()})));
+      }}, 'Preview product'),
+      h('button', {class:'btn ghost', onclick:() => go('dash/products')}, 'Cancel')));
+}
+const PF = {q:'', cat:'', st:'', sort:'date'};
+function myProducts() {
+  const out = h('div');
+  const by = {name:(a, b) => a.name.localeCompare(b.name), price:(a, b) => a.price - b.price, date:(a, b) => b.created - a.created};
+  function draw() {
+    const q = PF.q.toLowerCase();
+    const l = S.mine.filter(p => (!q || p.name.toLowerCase().includes(q)) && (!PF.cat || p.cat === PF.cat) && (!PF.st || p.status === PF.st)).sort(by[PF.sort]);
+    if (!l.length) {
+      out.replaceChildren(h('div', {class:'empty'},
+        h('h3', {}, S.mine.length ? 'No matching products' : 'No products yet'),
+        h('p', {class:'muted'}, 'Add your first digital product to get started.'),
+        h('button', {class:'btn', onclick:() => go('dash/add')}, 'Add product')));
+      return;
+    }
+    const rows = l.map(p => h('tr', {},
+      h('td', {}, h('div', {class:'thumb'}, art(p))),
+      h('td', {}, p.name),
+      h('td', {}, inr(p.price)),
+      h('td', {}, p.cat),
+      h('td', {}, h('span', {class:'chip ' + (p.status === 'published' ? 'ok' : 'off')}, p.status === 'published' ? 'Published' : 'Draft')),
+      h('td', {}, fdate(p.created)),
+      h('td', {}, h('div', {class:'row'},
+        h('button', {class:'btn ghost sm', onclick:() => go('dash/edit/' + p.id)}, 'Edit'),
+        h('button', {class:'btn ghost sm', onclick:() => modal('Preview', card(Object.assign({}, p, {store:'me', sold:0})))}, 'Preview'),
+        h('button', {class:'btn ghost sm', onclick:() => {
+          p.status = p.status === 'published' ? 'draft' : 'published';
+          save(); toast(p.status === 'published' ? 'Published' : 'Unpublished'); draw();
+        }}, p.status === 'published' ? 'Unpublish' : 'Publish'),
+        h('button', {class:'btn danger sm', onclick:async () => {
+          if (await confirmBox('Delete "' + p.name + '"? This cannot be undone.')) {
+            S.mine.splice(S.mine.indexOf(p), 1); delete MEM.imgs[p.id]; save(); toast('Product deleted'); draw();
+          }
+        }}, 'Delete')))));
+    out.replaceChildren(h('div', {class:'tw'}, h('table', {},
+      h('thead', {}, h('tr', {}, ['Image', 'Name', 'Price', 'Category', 'Status', 'Created', 'Actions'].map(c => h('th', {}, c)))),
+      h('tbody', {}, rows))));
+  }
+  function bind(k, c) { c.addEventListener('input', () => { PF[k] = c.value; draw(); }); return c; }
+  draw();
+  const opt = (arr, cur) => arr.map(x => h('option', {value:x[0], selected:cur === x[0]}, x[1]));
+  return h('div', {},
+    h('div', {class:'row sb'}, h('h1', {}, 'My products'), h('button', {class:'btn', onclick:() => go('dash/add')}, 'Add product')),
+    h('div', {class:'filters'},
+      bind('q', h('input', {type:'search', placeholder:'Search products', 'aria-label':'Search', value:PF.q})),
+      bind('cat', h('select', {'aria-label':'Category'}, opt([['', 'All categories']].concat(S.cats.map(c => [c, c])), PF.cat))),
+      bind('st', h('select', {'aria-label':'Status'}, opt([['', 'All statuses'], ['published', 'Published'], ['draft', 'Draft']], PF.st))),
+      bind('sort', h('select', {'aria-label':'Sort'}, opt([['date', 'Newest'], ['name', 'Name'], ['price', 'Price']], PF.sort)))),
+    out);
+}
+const OF = {q:'', st:'', key:'date', dir:-1, n:8};
+function ordersView() {
+  // FUTURE BACKEND: load verified orders from your server here.
+  const out = h('div');
+  const cols = [['id','Order ID'],['prod','Product'],['cust','Customer'],['date','Date'],['amt','Amount'],['os','Order status'],['ps','Payment'],['ds','Delivery']];
+  function draw() {
+    const q = OF.q.toLowerCase();
+    const l = ORDERS.filter(o => (!q || (o.id + o.prod + o.cust).toLowerCase().includes(q)) && (!OF.st || o.os === OF.st))
+      .sort((a, b) => (a[OF.key] > b[OF.key] ? 1 : -1) * OF.dir);
+    if (!l.length) { out.replaceChildren(h('div', {class:'empty'}, 'No orders match your search.')); return; }
+    const head = cols.map(c => h('th', {}, h('button', {onclick:() => { OF.dir = OF.key === c[0] ? -OF.dir : 1; OF.key = c[0]; draw(); }},
+      c[1] + (OF.key === c[0] ? (OF.dir > 0 ? ' \u25B2' : ' \u25BC') : ''))));
+    const rows = l.slice(0, OF.n).map(o => h('tr', {},
+      h('td', {}, o.id), h('td', {}, o.prod), h('td', {}, o.cust), h('td', {}, fdate(o.date)),
+      h('td', {}, inr(o.amt)), h('td', {}, o.os), h('td', {}, o.ps), h('td', {}, o.ds)));
+    out.replaceChildren(
+      h('div', {class:'tw'}, h('table', {}, h('thead', {}, h('tr', {}, head)), h('tbody', {}, rows))),
+      l.length > OF.n ? h('p', {style:'text-align:center'}, h('button', {class:'btn ghost', onclick:() => { OF.n += 8; draw(); }}, 'Load more')) : '');
+  }
+  draw();
+  return h('div', {},
+    h('h1', {}, 'Orders'),
+    note('Sample figures shown for layout preview.'),
+    h('div', {class:'filters'},
+      h('input', {type:'search', 'aria-label':'Search orders', placeholder:'Search orders', oninput:e => { OF.q = e.target.value; OF.n = 8; draw(); }}),
+      h('select', {'aria-label':'Status', onchange:e => { OF.st = e.target.value; draw(); }},
+        ['', 'Completed', 'Pending', 'Cancelled'].map(v => h('option', {value:v}, v || 'All statuses')))),
+    out);
+}
+function analytics() {
+  const m = [['Apr', 12], ['May', 18], ['Jun', 15], ['Jul', 24], ['Aug', 30], ['Sep', 27], ['Oct', 35]];
+  const done = ORDERS.filter(o => o.os === 'Completed');
+  return h('div', {},
+    h('h1', {}, 'Sales analytics'),
+    note('Sample figures shown for layout preview.'),
+    h('div', {class:'stats'},
+      h('div', {class:'stat'}, h('b', {}, ORDERS.length), h('small', {class:'muted'}, 'Total orders')),
+      h('div', {class:'stat'}, h('b', {}, inr(done.reduce((a, o) => a + o.amt, 0))), h('small', {class:'muted'}, 'Total revenue'))),
+    h('div', {class:'panel'}, h('h2', {}, 'Sales trend'),
+      h('div', {class:'bars', role:'img', 'aria-label':'Bar chart of monthly orders'},
+        m.map(x => h('div', {style:'height:' + (x[1] / 35 * 100) + '%', title:x[1] + ' orders'}, h('span', {}, x[0]))))),
+    h('div', {class:'panel'}, h('h2', {}, 'Best-performing products'),
+      SAMPLE.slice().sort(SORTS.best).slice(0, 4).map(p => h('p', {}, p.name))),
+    h('div', {class:'panel'}, h('h2', {}, 'Recent orders'),
+      ORDERS.slice(0, 5).map(o => h('p', {}, o.id + ' \u2022 ' + o.prod + ' \u2022 ' + inr(o.amt) + ' \u2022 ' + o.os))));
+}
+function settings() {
+  const nm = h('input', {id:'an', value:S.user.name});
+  const sn = h('input', {id:'ssn', value:S.store.name});
+  const sd = h('textarea', {id:'ssd'}, S.store.desc);
+  const up = h('input', {id:'ssu', value:S.store.upi});
+  const prefs = [['orders', 'Order notifications'], ['login', 'Login alerts'], ['marketing', 'Product news and offers'], ['analytics', 'Allow usage analytics']];
+  const cbs = prefs.map(p => h('p', {}, h('label', {}, h('input', {type:'checkbox', checked:S.prefs[p[0]]}), ' ' + p[1])));
+  return h('div', {},
+    h('h1', {}, 'Settings'),
+    h('div', {class:'panel'}, h('h2', {}, 'Account information'),
+      field('Display name', nm, 'an'),
+      h('p', {class:'muted'}, 'Email: ' + S.user.email)),
+    h('div', {class:'panel'}, h('h2', {}, 'Store information'),
+      field('Store name', sn, 'ssn'),
+      field('Store description', sd, 'ssd'),
+      field('UPI ID', up, 'ssu'),
+      h('div', {class:'row'}, h('span', {}, 'Store logo: ' + (MEM.logo ? 'set' : 'not set')),
+        h('button', {class:'btn ghost sm', onclick:() => go('dash/store')}, 'Change logo'))),
+    h('div', {class:'panel'}, h('h2', {}, 'Notification preferences'), cbs),
+    h('div', {class:'panel'}, h('h2', {}, 'Privacy'),
+      h('p', {class:'muted'}, 'Your store and product details are saved in this browser only.'),
+      h('button', {class:'btn ghost sm', onclick:async () => {
+        if (await confirmBox('Clear all data saved in this browser?', 'Clear data')) {
+          localStorage.removeItem('dph'); S = defaults(); toast('Saved data cleared'); go('home');
+        }
+      }}, 'Clear saved data')),
+    h('div', {class:'panel'}, h('h2', {}, 'Membership'),
+      h('p', {}, 'Current plan: none'),
+      h('button', {class:'btn ghost sm', onclick:() => go('dash/membership')}, 'View plans')),
+    h('div', {class:'row'},
+      h('button', {class:'btn', onclick:() => {
+        let ok = setErr('an', nm.value.trim() ? '' : 'Enter a name.');
+        ok = setErr('ssn', sn.value.trim() ? '' : 'Store name is required.') && ok;
+        ok = setErr('ssu', !up.value.trim() || UPI_RE.test(up.value.trim()) ? '' : 'UPI ID should look like name@bank.') && ok;
+        if (!ok) return;
+        S.user.name = nm.value.trim();
+        Object.assign(S.store, {name:sn.value.trim(), desc:sd.value.trim(), upi:up.value.trim(), saved:true});
+        cbs.forEach((c, i) => { S.prefs[prefs[i][0]] = c.querySelector('input').checked; });
+        save(); toast('Settings saved');
+      }}, 'Save settings'),
+      h('button', {class:'btn ghost', onclick:() => render(true)}, 'Cancel')));
+}
+
+/* ---------- Router ---------- */
+function pageFor(r, a) {
+  if (r === 'explore') return exploreView();
+  if (r === 'best') { F.sort = 'best'; F.cat = ''; return exploreView(); }
+  if (r === 'categories') return h('div', {class:'wrap sec'}, h('h1', {}, 'Categories'), catsView());
+  if (r === 'membership') return h('div', {class:'wrap sec'}, h('h1', {}, 'Membership'), plansView());
+  if (r === 'product') return productView(a);
+  if (r === 'store') return storeView(a || 'me');
+  if (r === 'sell') {
+    return h('div', {class:'wrap sec'},
+      h('h1', {}, 'Become a seller'),
+      h('p', {class:'muted'}, 'Create a store, publish products and manage orders from one dashboard.'),
+      h('button', {class:'btn', onclick:() => { S.user.role = 'seller'; save(); go('dash/overview'); }},
+        S.user.role === 'seller' ? 'Open seller dashboard' : 'Start selling'));
+  }
+  return homeView();
+}
+function render(keep) {
+  const parts = (location.hash.slice(1) || 'home').split('/');
+  const r = parts[0], a = parts[1], b = parts[2];
+  $app.replaceChildren();
+  if (dlg.open) dlg.close();
+  if (!S.user) { $app.append(authView()); return; }
+  if (r === 'dash' && S.user.role !== 'seller') { go('sell'); return; }
+  $app.append(
+    header(),
+    r === 'dash' ? dashView(a || 'overview', b) : h('main', {id:'main'}, pageFor(r, a)),
+    footer());
+  if (!keep) window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', () => render());
+render();
+</script>
+</body>
+</html>
