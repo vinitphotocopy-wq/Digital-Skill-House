@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Digital Product House</title>
+<style>
+/* ===== Design tokens ===== */
+:root{--navy:#0f1b3d;--bg:#f5f6fb;--card:#fff;--blue:#2f5bff;--violet:#7a3cff;--line:#e2e5f0;--muted:#56627f;--ok:#0b7a4b;--bad:#c62850;--r:14px;--sh:0 2px 10px rgba(15,27,61,.07);--grad:linear-gradient(135deg,var(--blue),var(--violet));--s:16px;font-family:"Segoe UI",Inter,system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--navy);line-height:1.5;overflow-x:hidden}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}h1{font-size:clamp(2rem,5vw,3.2rem);letter-spacing:-.02em}h2{font-size:1.4rem}h3{font-size:1.05rem}p{margin:0 0 .8em}
+a{color:var(--blue)}:focus-visible{outline:3px solid var(--violet);outline-offset:2px}
+.muted{color:var(--muted)}small{font-size:.82rem}.sr{position:absolute;left:-9999px}.wrap{max-width:1180px;margin:0 auto;padding:0 var(--s)}
+.btn{font:inherit;font-weight:600;border:0;border-radius:10px;padding:.65rem 1.1rem;min-height:44px;background:var(--grad);color:#fff;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(47,91,255,.3)}.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}.btn.danger{background:var(--bad)}.btn.sm{min-height:36px;padding:.3rem .7rem;font-size:.85rem}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}.row.sb{justify-content:space-between}
+input,select,textarea{font:inherit;width:100%;padding:.65rem .8rem;border:1px solid #c9cee0;border-radius:10px;background:#fff;color:var(--navy);min-height:44px}
+textarea{min-height:110px;resize:vertical}input[type=checkbox]{width:auto;min-height:0}
+.field{margin-bottom:1rem}.field label{display:block;font-weight:600;margin-bottom:.3rem;font-size:.92rem}.err,.msg{color:var(--bad);font-size:.85rem;min-height:1em}
+.banner{background:#fff6d6;border:1px solid #f0d675;color:#5c4500;padding:.6rem .9rem;border-radius:10px;font-size:.88rem;margin-bottom:1rem}
+.chip{display:inline-block;background:#eef1ff;color:#2443c4;border-radius:99px;padding:.1rem .6rem;font-size:.78rem;font-weight:600}.chip.ok{background:#dcf5e8;color:var(--ok)}.chip.off{background:#eceef5;color:var(--muted)}.chip.bad{background:#fde3ea;color:var(--bad)}
+/* header */
+header.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.hd{display:flex;align-items:center;gap:1rem;min-height:64px;flex-wrap:wrap;padding:.4rem 0}
+.logo{font-weight:800;font-size:1.15rem;text-decoration:none;color:var(--navy);display:flex;align-items:center;gap:.5rem}.logo i{width:26px;height:26px;border-radius:8px;background:var(--grad);display:inline-block}
+nav.main{display:flex;gap:.2rem;flex:1;flex-wrap:wrap}nav.main a{padding:.4rem .7rem;border-radius:8px;text-decoration:none;color:var(--navy);font-weight:500;font-size:.93rem}nav.main a:hover,nav.main a.on{background:#eef1ff;color:#2443c4}
+.sform{display:flex;gap:.4rem;min-width:200px}.menu{position:relative}.pop{position:absolute;right:0;top:110%;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh);padding:.6rem;min-width:260px;z-index:30}.pop[hidden]{display:none}
+.burger{display:none}
+@media(max-width:860px){.burger{display:inline-flex}nav.main{display:none;flex-basis:100%;flex-direction:column}nav.main.open{display:flex}.sform{flex-basis:100%}}
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.1rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;display:flex;flex-direction:column;transition:transform .15s}.card:hover{transform:translateY(-3px)}
+.cb{padding:1rem;display:flex;flex-direction:column;gap:.45rem;flex:1}.cb .row:last-child{margin-top:auto}
+.art{aspect-ratio:16/9;display:grid;place-items:center;color:#fff;font-weight:800;font-size:1.6rem;overflow:hidden;width:100%}.art img{width:100%;height:100%;object-fit:cover}
+.kw{display:flex;gap:.3rem;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
+.sec{padding:1.6rem 0}.hero{padding:3.5rem 0 2rem}.hero p{max-width:560px;font-size:1.1rem}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.8rem}.cat{padding:1rem;border:1px solid var(--line);background:#fff;border-radius:var(--r);cursor:pointer;font:inherit;text-align:left;color:var(--navy)}.cat:hover{border-color:var(--blue)}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:1.2rem;align-items:end}
+.empty{text-align:center;padding:2.5rem 1rem;background:#fff;border:1px dashed #c9cee0;border-radius:var(--r)}
+/* auth */
+.authwrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}.authhero{background:var(--grad);color:#fff;padding:3rem;display:flex;flex-direction:column;justify-content:center}.authhero .logo{color:#fff}.authhero .logo i{background:#fff}
+.auth{padding:2rem;max-width:480px;margin:auto;width:100%}.tabs,.seg{display:flex;gap:.3rem;background:#eceef6;padding:.25rem;border-radius:12px;margin-bottom:1rem}.tabs button,.seg button{flex:1;border:0;background:none;font:inherit;font-weight:600;padding:.55rem;border-radius:9px;cursor:pointer;color:var(--navy);min-height:44px}.tabs .on,.seg .on{background:#fff;box-shadow:var(--sh)}
+.meter{height:6px;border-radius:9px;background:#e5e8f2;overflow:hidden}.meter i{display:block;height:100%;width:0;transition:width .2s}
+@media(max-width:800px){.authwrap{grid-template-columns:1fr}.authhero{padding:1.5rem}}
+/* dashboard */
+.dash{display:grid;grid-template-columns:230px 1fr;gap:1.2rem;padding:1.2rem var(--s);max-width:1300px;margin:0 auto}
+.side{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:.6rem;height:fit-content;position:sticky;top:80px}.side button{display:block;width:100%;text-align:left;border:0;background:none;font:inherit;padding:.65rem .8rem;border-radius:9px;cursor:pointer;min-height:44px;color:var(--navy)}.side button:hover{background:#f1f3fb}.side button.on{background:#eef1ff;color:#2443c4;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.8rem;margin-bottom:1.2rem}.stat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:1rem}.stat b{font-size:1.5rem;display:block}
+.panel{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:1.2rem;margin-bottom:1.2rem;box-shadow:var(--sh)}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{padding:.6rem;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th button{border:0;background:none;font:inherit;font-weight:700;cursor:pointer;color:var(--navy)}
+.thumb{width:64px;height:36px;border-radius:6px;overflow:hidden;font-size:.8rem}.sbtn{display:none}
+@media(max-width:860px){.dash{grid-template-columns:1fr}.side{position:static;display:none}.side.open{display:block}.sbtn{display:inline-flex;margin-bottom:.8rem}}
+.bars{display:flex;align-items:flex-end;gap:.6rem;height:150px}.bars div{flex:1;background:var(--grad);border-radius:6px 6px 0 0;position:relative;min-height:4px}.bars span{position:absolute;bottom:-1.4rem;left:0;right:0;text-align:center;font-size:.72rem;color:var(--muted)}
+.prev{border:1px dashed #b7bdd4;border-radius:12px;min-height:110px;display:grid;place-items:center;overflow:hidden;margin-bottom:.4rem;max-width:320px}.prev img{max-width:100%;display:block}
+.tag{display:inline-flex;gap:.3rem;align-items:center;background:#eef1ff;color:#2443c4;border-radius:99px;padding:.1rem .3rem .1rem .7rem;font-size:.82rem;margin:.2rem .2rem 0 0}.tag button{border:0;background:none;cursor:pointer;font-size:1rem;min-width:28px;min-height:28px}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.1rem;max-width:760px}.plan{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:1.4rem}.plan.hi{border:2px solid var(--violet)}.plan .price{font-size:2rem;font-weight:800}.plan ul{padding-left:1.1rem}
+dialog{border:0;border-radius:var(--r);padding:0;width:min(640px,94vw);max-height:92vh;box-shadow:0 20px 60px rgba(15,27,61,.3)}dialog::backdrop{background:rgba(15,27,61,.5)}.dh{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.2rem;border-bottom:1px solid var(--line)}.dh h2{margin:0}.db{padding:1.2rem}.x{border:0;background:none;font-size:1.6rem;cursor:pointer;min-width:44px;min-height:44px}
+#toast{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:.7rem 1.1rem;border-radius:10px;z-index:99;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}#toast.on{opacity:1}
+footer{border-top:1px solid var(--line);background:#fff;margin-top:2rem;padding:1.5rem 0}footer a{margin-right:1rem}
+.spin{width:18px;height:18px;border:3px solid #ccd;border-top-color:var(--violet);border-radius:50%;display:inline-block;animation:sp .8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation-duration:1ms!important}}
+</style>
+</head>
+<body>
+<div id="app"></div><div id="toast" role="status" aria-live="polite"></div><dialog id="dlg" aria-modal="true"></dialog>
+<script>
+'use strict';
+/* =====================================================================
+   DIGITAL PRODUCT HOUSE - frontend prototype (DEMO MODE)
+   - localStorage is NOT a secure database and does NOT sync across users/devices.
+     Separate sellers, shared stores and real marketplace data need a backend.
+   - Never stored in the browser: passwords, tokens, API keys, payment secrets.
+   ===================================================================== */
+
+/* ---------- Config ---------- */
+const RATIO_TOLERANCE = 0.03;               // configurable aspect-ratio tolerance (3%)
+const PAGE = 6;
+const DEFAULT_CATS = ['Video Editing','Graphics and Design','Templates','AI Tools','Creator Resources','Other'];
+// EDITABLE PLACEHOLDER BENEFITS - platform owner to define real benefits.
+const PLANS = [
+  {id:'m', name:'Monthly Membership', price:99, days:30, hi:true, features:['Placeholder benefit A (to be defined)','Placeholder benefit B (to be defined)','Placeholder benefit C (to be defined)']},
+  {id:'w', name:'7-Day Membership', price:49, days:7, features:['Placeholder benefit A (to be defined)','Placeholder benefit B (to be defined)']}
+];
+const INFO = {About:'Digital Product House is a digital products marketplace prototype.',Contact:'Placeholder: contact details to be added by the platform owner.',Help:'Placeholder: help-centre content to be added.','Privacy Policy':'Placeholder: a real privacy policy must be written before launch.',Terms:'Placeholder: real terms and conditions must be written before launch.'};
+
+/* ---------- Helpers ---------- */
+const $app = document.getElementById('app'), dlg = document.getElementById('dlg');
+const inr = n => '\u20B9' + Number(n).toLocaleString('en-IN');
+const fdate = t => new Date(t).toLocaleDateString('en-IN');
+// Safe DOM builder: text always goes through text nodes (no innerHTML).
+const h = (tag, props = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (k === 'class') e.className = v;
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v);
+  }
+  kids.flat(9).forEach(c => e.append(c instanceof Node ? c : document.createTextNode(c ?? '')));
+  return e;
+};
+let tt; const toast = m => { const t = document.getElementById('toast'); t.textContent = m; t.className = 'on'; clearTimeout(tt); tt = setTimeout(() => t.className = '', 3200); };
+const go = hash => { if (location.hash === '#' + hash) render(); else location.hash = hash; };
+function modal(title, ...nodes) {
+  dlg.replaceChildren(h('div', {class:'dh'}, h('h2', {}, title), h('button', {class:'x','aria-label':'Close',onclick:() => dlg.close()}, '\u00D7')), h('div', {class:'db'}, ...nodes));
+  if (!dlg.open) dlg.showModal(); return dlg;
+}
+const confirmBox = (msg, label = 'Delete') => new Promise(res => {
+  modal('Please confirm', h('p', {}, msg), h('div', {class:'row'},
+    h('button', {class:'btn ghost', onclick:() => { dlg.close(); res(false); }}, 'Cancel'),
+    h('button', {class:'btn danger', onclick:() => { dlg.close(); res(true); }}, label)));
+});
+const demoBanner = t => h('div', {class:'banner', role:'note'}, h('b', {}, 'DEMO ONLY: '), t);
+
+/* ---------- State (non-sensitive only) ---------- */
+const MEM = {imgs:{}, logo:null, orders:[], notes:[]};   // session-only: object URLs and demo notifications
+const defaults = () => ({user:null, store:{name:'', desc:'', upi:'', saved:false}, mine:[], cats:[...DEFAULT_CATS], prefs:{orders:true, login:true, marketing:false, analytics:false}});
+let S; try { S = Object.assign(defaults(), JSON.parse(localStorage.getItem('dph') || '{}')); } catch (e) { S = defaults(); }
+const save = () => { try { localStorage.setItem('dph', JSON.stringify(S)); } catch (e) { /* storage full/blocked */ } };
+
+/* FUTURE EMAIL INTEGRATION:
+   Connect a secure backend and an approved email service here.
+   Do not expose email service credentials in frontend JavaScript.
+   Planned: registration, login alerts, password reset, order and membership emails. */
+function notify(subject, body) { MEM.notes.unshift({subject, body, t:Date.now()}); toast('Preview only, no email was sent: ' + subject); }
+
+/* ---------- Sample (demo) marketplace data ---------- */
+const NOW = Date.now(), D = 864e5;
+const STORES = {s1:{name:'Reel Forge Studio', desc:'Editing packs for short-form creators.'}, s2:{name:'Pixel Orchard', desc:'Backgrounds, templates and design assets.'}, s3:{name:'Creator Kit Co', desc:'Tools and resources for solo creators.'}, me:{}};
+const storeOf = id => id === 'me' ? {name:S.store.name || 'My Store', desc:S.store.desc} : STORES[id];
+// [id,name,store,category,price,keywords,description,popularity(demo),sales(demo),daysAgo]
+const SAMPLE = [
+ ['p1','Premium Video Editing Pack','s1','Video Editing',799,['video','editing','presets'],'Transitions, overlays and colour presets for fast short-form edits.',9,140,3],
+ ['p2','Typography Reels Pack','s1','Video Editing',499,['typography','reels','text'],'Animated text styles ready to drop into reels and shorts.',8,96,9],
+ ['p3','Gradient Background Collection','s2','Graphics and Design',299,['gradient','background','wallpaper'],'High-resolution gradient backgrounds for thumbnails and posts.',7,210,15],
+ ['p4','XML Animation Pack','s1','Video Editing',599,['xml','animation','mobile'],'Animation project files for mobile editing apps.',6,58,2],
+ ['p5','Social Media Templates','s2','Templates',399,['social','templates','posts'],'Editable post and story layouts for consistent branding.',9,175,20],
+ ['p6','Digital Creator Toolkit','s3','Creator Resources',999,['creator','toolkit','bundle'],'A bundle of checklists, planners and asset folders.',10,120,30],
+ ['p7','AI Prompt Library','s3','AI Tools',349,['ai','prompts','workflow'],'Organised prompts for scripts, captions and ideas.',7,64,6],
+ ['p8','Reel Cover Templates','s2','Templates',249,['cover','reels','thumbnail'],'Cover templates sized for vertical video.',5,40,12],
+ ['p9','Sound Effects Bundle','s3','Creator Resources',449,['sound','sfx','audio'],'Royalty-style placeholder SFX bundle for edits.',6,77,25]
+].map(([id,name,store,cat,price,kw,desc,pop,sold,ago]) => ({id,name,store,cat,price,kw,desc,pop,sold,created:NOW - ago * D, status:'published'}));
+const ALL = () => SAMPLE.concat(S.mine.map(p => ({...p, store:'me', pop:p.pop || 0, sold:p.sold || 0})));
+const PUB = () => ALL().filter(p => p.status === 'published');
+const SORTS = {best:(a,b)=>b.sold-a.sold, pop:(a,b)=>b.pop-a.pop, new:(a,b)=>b.created-a.created, lo:(a,b)=>a.price-b.price, hi:(a,b)=>b.price-a.price};
+// FUTURE BACKEND: replace with verified order/sales records from a server.
+const CUSTOMERS = ['Aarav','Diya','Kabir','Meera','Rohan','Isha'];
+const DEMO_ORDERS = Array.from({length:26}, (_, i) => {
+  const p = SAMPLE[i % SAMPLE.length], st = ['Completed','Pending','Cancelled'][i % 3];
+  return {id:'DEMO-' + (1001 + i), prod:p.name, cust:CUSTOMERS[i % 6] + ' (demo)', date:NOW - i * 2 * D, amt:p.price, os:st, ps:st === 'Completed' ? 'Paid (demo)' : st === 'Pending' ? 'Unpaid' : 'Not paid', ds:st === 'Completed' ? 'Delivered (demo)' : 'Locked'};
+});
+
+/* ---------- Reusable components ---------- */
+function art(p, cls = '') {
+  const src = MEM.imgs[p.id];
+  const n = [...p.id].reduce((a, c) => a + c.charCodeAt(0), 0) * 7 % 360;
+  const box = h('div', {class:'art ' + cls, style:`background:linear-gradient(135deg,hsl(${n} 75% 55%),hsl(${(n + 50) % 360} 75% 38%))`});
+  if (src) box.append(h('img', {src, alt:p.name})); else box.append(p.name.split(' ').slice(0, 2).map(w => w[0]).join(''));
+  return box;
+}
+function card(p) {
+  return h('article', {class:'card'}, art(p), h('div', {class:'cb'},
+    h('span', {class:'chip'}, p.cat), h('h3', {}, p.name),
+    h('a', {href:'#store/' + p.store}, storeOf(p.store).name),
+    h('p', {class:'muted'}, p.desc.length > 80 ? p.desc.slice(0, 80) + '...' : p.desc),
+    h('div', {class:'kw'}, p.kw.slice(0, 4).map(k => h('span', {}, '#' + k))),
+    p.store !== 'me' ? h('small', {class:'muted'}, 'DEMO data: ' + p.sold + ' sample sales') : '',
+    h('strong', {}, inr(p.price)),
+    h('div', {class:'row'}, h('button', {class:'btn ghost sm', onclick:() => go('product/' + p.id)}, 'View product'), h('button', {class:'btn sm', onclick:() => checkout(p)}, 'Buy now'))));
+}
+const grid = list => list.length ? h('div', {class:'grid'}, list.map(card)) : h('div', {class:'empty'}, h('h3', {}, 'No products found'), h('p', {class:'muted'}, 'Try a different search or clear your filters.'));
+const field = (label, ctrl, id) => h('div', {class:'field'}, h('label', {for:id}, label), ctrl, h('div', {class:'err', id:'e-' + id, role:'alert'}));
+const setErr = (id, m) => { const e = document.getElementById('e-' + id); if (e) e.textContent = m || ''; return !m; };
+const counter = (inp, max) => { const c = h('small', {class:'muted'}); const u = () => c.textContent = inp.value.length + '/' + max; inp.maxLength = max; inp.addEventListener('input', u); u(); return c; };
+
+// Image picker: validates aspect ratio with JS, previews, replace/remove, revokes object URLs.
+function picker(ratios, cur, onChange) {
+  let url = cur || null, mine = null;
+  const msg = h('p', {class:'msg', role:'alert'}), info = h('small', {class:'muted'}), prev = h('div', {class:'prev'});
+  const inp = h('input', {type:'file', accept:'image/*', class:'sr', 'aria-label':'Choose image'});
+  const rel = () => { if (mine && url === mine) { URL.revokeObjectURL(mine); mine = null; } };
+  const rm = h('button', {type:'button', class:'btn ghost sm', onclick:() => { rel(); url = null; info.textContent = ''; onChange(null); draw(); }}, 'Remove image');
+  const rep = h('button', {type:'button', class:'btn ghost sm', onclick:() => inp.click()});
+  function draw() { prev.replaceChildren(url ? h('img', {src:url, alt:'Preview'}) : h('span', {class:'muted'}, 'No image selected')); rm.hidden = !url; rep.textContent = url ? 'Replace image' : 'Choose image'; }
+  inp.addEventListener('change', () => {
+    const f = inp.files[0]; if (!f) return; msg.textContent = '';
+    const u = URL.createObjectURL(f), im = new Image();
+    im.onload = () => {
+      const r = im.width / im.height, ok = ratios.find(([a, b]) => Math.abs(r / (a / b) - 1) <= RATIO_TOLERANCE);
+      if (!ok) { URL.revokeObjectURL(u); msg.textContent = `Unsupported ratio (${im.width}\u00D7${im.height}). Use ${ratios.map(x => x.join(':')).join(' or ')}.`; return; }
+      rel(); url = mine = u; info.textContent = `Detected ratio ${ok.join(':')} (${im.width}\u00D7${im.height})`; onChange(u); draw();
+    };
+    im.onerror = () => { URL.revokeObjectURL(u); msg.textContent = 'That file could not be read as an image.'; };
+    im.src = u; inp.value = '';
+  });
+  draw(); return h('div', {}, prev, info, msg, inp, h('div', {class:'row'}, rep, rm));
+}
+
+/* ---------- Auth (DEMO MODE) ---------- */
+function authView() {
+  let mode = 'login', role = 'customer';
+  const box = h('div', {class:'auth'});
+  const strength = pw => [pw.length >= 8, /[a-z]/.test(pw) && /[A-Z]/.test(pw), /\d/.test(pw), /[^\w\s]/.test(pw)].filter(Boolean).length;
+  function enter(email, r) {
+    S.user = {email, role:r, name:email.split('@')[0]}; save();   // NOTE: password is never kept
+    notify('Welcome (demo)', 'A real system would send a registration/login email here.');
+    go(r === 'seller' ? 'dash/overview' : 'home');
+  }
+  function draw() {
+    const signup = mode === 'signup';
+    const em = h('input', {id:'em', type:'email', autocomplete:'email'}), pw = h('input', {id:'pw', type:'password', autocomplete: signup ? 'new-password' : 'current-password'});
+    const cf = h('input', {id:'cf', type:'password', autocomplete:'new-password'}), terms = h('input', {id:'tc', type:'checkbox'});
+    const bar = h('i'), meter = h('div', {class:'meter'}, bar), sl = h('small', {class:'muted'}, 'Password strength');
+    pw.addEventListener('input', () => { const s = strength(pw.value); bar.style.width = s * 25 + '%'; bar.style.background = ['#c62850','#c62850','#d98a00','#2f5bff','#0b7a4b'][s]; sl.textContent = 'Password strength: ' + ['too weak','weak','fair','good','strong'][s]; });
+    const show = h('button', {type:'button', class:'btn ghost sm', 'aria-pressed':'false', onclick:e => { const t = pw.type === 'password'; pw.type = cf.type = t ? 'text' : 'password'; e.target.textContent = t ? 'Hide password' : 'Show password'; e.target.setAttribute('aria-pressed', t); }}, 'Show password');
+    const roleBtns = ['customer','seller'].map(r => h('button', {type:'button', class: r === role ? 'on' : '', onclick:() => { role = r; roleBtns.forEach((b, i) => b.className = ['customer','seller'][i] === role ? 'on' : ''); }}, r === 'customer' ? 'Customer marketplace' : 'Seller dashboard'));
+    const form = h('form', {novalidate:true, onsubmit:e => {
+      e.preventDefault();
+      // FUTURE AUTH INTEGRATION: send credentials over HTTPS to a real auth service (Firebase Auth, Supabase, Auth0...).
+      // Never store passwords or tokens in localStorage/sessionStorage.
+      let ok = setErr('em', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value) ? '' : 'Enter a valid email address.');
+      ok = setErr('pw', pw.value.length >= 8 ? '' : 'Use at least 8 characters.') && ok;
+      if (signup) { ok = setErr('cf', cf.value === pw.value && cf.value ? '' : 'Passwords do not match.') && ok; ok = setErr('tc', terms.checked ? '' : 'Accept the terms to continue.') && ok; }
+      if (ok) enter(em.value.trim(), role);
+    }},
+      field('Email address', em, 'em'),
+      field('Password', h('div', {}, pw, signup ? [meter, sl] : ''), 'pw'),
+      signup ? field('Confirm password', cf, 'cf') : '', h('div', {class:'field'}, show),
+      signup ? h('div', {class:'field'}, h('label', {}, terms, ' I accept the ', h('a', {href:'#', onclick:e => { e.preventDefault(); info('Terms'); }}, 'Terms'), ' and ', h('a', {href:'#', onclick:e => { e.preventDefault(); info('Privacy Policy'); }}, 'Privacy Policy')), h('div', {class:'err', id:'e-tc', role:'alert'})) : '',
+      h('button', {class:'btn', style:'width:100%'}, signup ? 'Create demo account' : 'Log in (demo)'),
+      !signup ? h('p', {}, h('a', {href:'#', onclick:e => { e.preventDefault(); forgot(); }}, 'Forgot password?')) : '');
+    box.replaceChildren(
+      demoBanner('Authentication is simulated. No account is created, no password is saved and no email is sent.'),
+      h('div', {class:'tabs'}, ['login','signup'].map(m => h('button', {class: m === mode ? 'on' : '', onclick:() => { mode = m; draw(); }}, m === 'login' ? 'Login' : 'Create account'))),
+      h('p', {class:'muted'}, 'Enter as:'), h('div', {class:'seg'}, roleBtns), form,
+      h('hr'), h('p', {class:'muted'}, 'Or try a sample profile:'),
+      h('div', {class:'row'}, h('button', {class:'btn ghost', onclick:() => enter('demo.customer@example.com', 'customer')}, 'Demo customer'), h('button', {class:'btn ghost', onclick:() => enter('demo.seller@example.com', 'seller')}, 'Demo seller')));
+  }
+  function forgot() {
+    const em = h('input', {id:'fe', type:'email'});
+    modal('Reset password (demo)', demoBanner('No reset email will be sent.'), field('Email address', em, 'fe'), h('button', {class:'btn', onclick:() => {
+      // FUTURE EMAIL INTEGRATION: call backend password-reset endpoint here.
+      if (!setErr('fe', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value) ? '' : 'Enter a valid email.')) return;
+      notify('Password reset (demo)', 'A real system would email a reset link.'); dlg.close();
+    }}, 'Preview reset email'));
+  }
+  draw();
+  return h('div', {class:'authwrap'}, h('section', {class:'authhero'}, h('div', {class:'logo'}, h('i'), 'Digital Product House'), h('h1', {}, 'Sell and discover digital products.'), h('p', {}, 'Sellers open a store and publish. Customers browse templates, packs and tools in one marketplace.')), box);
+}
+const info = k => modal(k, h('p', {}, INFO[k]));
+
+/* ---------- Header / footer ---------- */
+function header() {
+  const r = location.hash.slice(1).split('/')[0] || 'home';
+  const links = [['home','Home'],['explore','Explore Products'],['categories','Categories'],['best','Best Sellers'],['membership','Membership'],['sell','Become a Seller']];
+  const nav = h('nav', {class:'main', id:'nav', 'aria-label':'Main'}, links.map(([k, t]) => h('a', {href:'#' + k, class: r === k ? 'on' : ''}, t)));
+  const q = h('input', {type:'search', placeholder:'Search products or keywords', 'aria-label':'Search', value:F.q});
+  const bell = h('div', {class:'pop', hidden:true}), prof = h('div', {class:'pop', hidden:true});
+  const toggle = (a, b) => { b.hidden = true; a.hidden = !a.hidden; if (!a.hidden && a === bell) drawBell(); };
+  function drawBell() { bell.replaceChildren(h('b', {}, 'Notification preview'), h('small', {class:'muted', style:'display:block'}, 'DEMO ONLY: nothing is emailed.'), MEM.notes.length ? MEM.notes.slice(0, 5).map(n => h('p', {}, h('b', {}, n.subject), h('br'), h('small', {}, n.body))) : h('p', {class:'muted'}, 'No notifications yet.')); }
+  prof.append(h('p', {}, h('b', {}, S.user.name), h('br'), h('small', {class:'muted'}, S.user.email + ' (' + S.user.role + ', demo)')),
+    S.user.role === 'seller' ? h('button', {class:'btn ghost sm', onclick:() => go('dash/overview')}, 'Seller dashboard') : h('button', {class:'btn ghost sm', onclick:() => go('sell')}, 'Become a seller'), ' ',
+    h('button', {class:'btn sm', onclick:logout}, 'Logout'));
+  const bb = h('button', {class:'btn ghost sm', 'aria-label':'Notifications', onclick:() => toggle(bell, prof)}, 'Alerts' + (MEM.notes.length ? ' (' + MEM.notes.length + ')' : ''));
+  const pb = h('button', {class:'btn ghost sm', 'aria-label':'Profile menu', onclick:() => toggle(prof, bell)}, 'Profile');
+  return h('header', {class:'top'}, h('div', {class:'wrap hd'}, h('a', {class:'logo', href:'#home'}, S.store.saved && MEM.logo && S.user.role === 'seller' ? h('img', {src:MEM.logo, alt:'', width:26, height:26}) : h('i'), 'Digital Product House'),
+    h('button', {class:'btn ghost sm burger', 'aria-label':'Menu', 'aria-controls':'nav', onclick:() => nav.classList.toggle('open')}, 'Menu'), nav,
+    h('form', {class:'sform', role:'search', onsubmit:e => { e.preventDefault(); F.q = q.value; F.n = PAGE; go('explore'); }}, q, h('button', {class:'btn sm'}, 'Search')),
+    h('div', {class:'menu'}, bb, bell), h('div', {class:'menu'}, pb, prof)));
+}
+function logout() { S.user = null; save(); toast('Logged out of demo session'); go('home'); }
+const footer = () => h('footer', {}, h('div', {class:'wrap'}, h('p', {}, ['About','Contact','Privacy Policy','Terms','Help'].map(k => h('a', {href:'#', onclick:e => { e.preventDefault(); info(k); }}, k))), h('small', {class:'muted'}, '\u00A9 Digital Product House. Frontend prototype: sample data, no real payments, accounts or downloads.')));
+
+/* ---------- Customer pages ---------- */
+const F = {q:'', cat:'', min:'', max:'', sort:'best', n:PAGE};
+function filtered() {
+  const q = F.q.trim().toLowerCase();
+  return PUB().filter(p => (!q || p.name.toLowerCase().includes(q) || p.kw.some(k => k.toLowerCase().includes(q))) && (!F.cat || p.cat === F.cat) && (F.min === '' || p.price >= +F.min) && (F.max === '' || p.price <= +F.max)).sort(SORTS[F.sort]);
+}
+function exploreView() {
+  const out = h('div'), more = h('button', {class:'btn ghost'}, 'Load more');
+  const draw = () => { const l = filtered(); out.replaceChildren(grid(l.slice(0, F.n))); more.hidden = l.length <= F.n; };
+  more.onclick = () => { F.n += PAGE; draw(); };
+  const mk = (id, key, props = {}) => { const i = h('input', {id, value:F[key], ...props}); i.addEventListener('input', () => { F[key] = i.value; F.n = PAGE; draw(); }); return i; };
+  const cat = h('select', {id:'fc', onchange:e => { F.cat = e.target.value; F.n = PAGE; draw(); }}, h('option', {value:''}, 'All categories'), S.cats.map(c => h('option', {value:c, selected:F.cat === c}, c)));
+  const sort = h('select', {id:'fs', onchange:e => { F.sort = e.target.value; draw(); }}, [['best','Best Selling (demo sales)'],['pop','Most Popular (demo)'],['new','Newest'],['lo','Price: Low to High'],['hi','Price: High to Low']].map(([v, t]) => h('option', {value:v, selected:F.sort === v}, t)));
+  const root = h('div', {class:'wrap sec'}, h('h1', {}, 'Explore products'), demoBanner('Best Selling and Most Popular use sample numbers. Later, Best Selling should use verified sales records from a backend.'),
+    h('div', {class:'filters'}, field('Search', mk('fq', 'q', {type:'search'}), 'fq'), field('Category', cat, 'fc'), field('Min price', mk('fmin', 'min', {type:'number', min:0}), 'fmin'), field('Max price', mk('fmax', 'max', {type:'number', min:0}), 'fmax'), field('Sort', sort, 'fs'),
+      h('div', {class:'field'}, h('button', {class:'btn ghost', onclick:() => { Object.assign(F, {q:'', cat:'', min:'', max:'', sort:'best', n:PAGE}); render(true); }}, 'Clear filters'))), out, h('p', {style:'text-align:center'}, more));
+  draw(); return root;
+}
+function homeView() {
+  const sec = (t, l, to) => h('section', {class:'sec'}, h('div', {class:'row sb'}, h('h2', {}, t), h('a', {href:'#' + to}, 'See all')), grid(l.slice(0, 3)));
+  const p = PUB();
+  return h('div', {class:'wrap'}, h('section', {class:'hero'}, h('h1', {}, 'Find the digital products your next project needs.'), h('p', {class:'muted'}, 'Video packs, templates and creator tools from independent sellers. Prices in Indian rupees.'), h('div', {class:'row'}, h('button', {class:'btn', onclick:() => go('explore')}, 'Explore products'), h('button', {class:'btn ghost', onclick:() => go('sell')}, 'Start selling'))),
+    sec('Featured products', [...p].sort(SORTS.pop), 'explore'), sec('Best-selling (demo data)', [...p].sort(SORTS.best), 'best'), sec('Trending (demo data)', [...p].sort((a, b) => b.pop * 3 + b.sold / 20 - a.pop * 3 - a.sold / 20), 'explore'), sec('Recently added', [...p].sort(SORTS.new), 'explore'),
+    h('section', {class:'sec'}, h('h2', {}, 'Popular categories'), catsView()), sec('Recommended for you (sample)', [...p].reverse(), 'explore'));
+}
+const catsView = () => h('div', {class:'cats'}, S.cats.map(c => h('button', {class:'cat', onclick:() => { F.cat = c; F.n = PAGE; go('explore'); }}, h('b', {}, c), h('br'), h('small', {class:'muted'}, PUB().filter(p => p.cat === c).length + ' products'))));
+function productView(id) {
+  const p = ALL().find(x => x.id === id); if (!p) return h('div', {class:'wrap sec'}, h('div', {class:'empty'}, 'Product not found.'));
+  return h('div', {class:'wrap sec'}, h('button', {class:'btn ghost sm', onclick:() => history.back()}, 'Back'), h('div', {class:'row', style:'align-items:flex-start;margin-top:1rem'},
+    h('div', {style:'flex:1 1 360px'}, art(p, ''), h('div', {class:'kw', style:'margin-top:.6rem'}, p.kw.map(k => h('span', {}, '#' + k)))),
+    h('div', {style:'flex:1 1 320px'}, h('span', {class:'chip'}, p.cat), h('h1', {style:'font-size:2rem'}, p.name), h('p', {}, 'By ', h('a', {href:'#store/' + p.store}, storeOf(p.store).name)), h('p', {}, p.desc + ' Includes the digital files described by the seller.'),
+      h('div', {class:'panel'}, h('b', {}, 'Order summary'), h('p', {}, p.name), h('h2', {}, inr(p.price)), h('p', {}, h('span', {class:'chip off'}, 'Download locked until payment is verified (future)')), h('button', {class:'btn', onclick:() => checkout(p)}, 'Buy now (demo checkout)')))),
+    h('h2', {style:'margin-top:2rem'}, 'Related products'), grid(PUB().filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 3)));
+}
+function storeView(sid) {
+  const s = storeOf(sid); if (!s) return h('div', {class:'wrap sec'}, h('div', {class:'empty'}, 'Store not found.'));
+  // DEMO: stores are local sample data. Real multi-seller stores need a backend/database.
+  const st = {q:'', cat:'', sort:'new'}, out = h('div');
+  const draw = () => { const q = st.q.toLowerCase(); out.replaceChildren(grid(PUB().filter(p => p.store === sid && (!st.cat || p.cat === st.cat) && (!q || p.name.toLowerCase().includes(q) || p.kw.some(k => k.includes(q)))).sort(SORTS[st.sort]))); };
+  const cats = [...new Set(PUB().filter(p => p.store === sid).map(p => p.cat))];
+  const qi = h('input', {type:'search', 'aria-label':'Search store products', placeholder:'Search this store', oninput:e => { st.q = e.target.value; draw(); }});
+  const ss = h('select', {'aria-label':'Sort', onchange:e => { st.sort = e.target.value; draw(); }}, [['new','Newest'],['lo','Price: Low to High'],['hi','Price: High to Low']].map(([v, t]) => h('option', {value:v}, t)));
+  const logo = sid === 'me' && MEM.logo ? h('img', {src:MEM.logo, alt:'Store logo', width:72, height:72, style:'border-radius:16px;object-fit:cover'}) : h('div', {class:'art', style:'width:72px;aspect-ratio:1;border-radius:16px;background:var(--grad)'}, s.name[0] || 'S');
+  draw();
+  return h('div', {class:'wrap sec'}, h('div', {class:'row'}, logo, h('div', {}, h('h1', {style:'margin:0'}, s.name), h('p', {class:'muted'}, s.desc || 'No description yet.'))),
+    h('div', {class:'row', style:'margin:1rem 0'}, cats.map(c => h('button', {class:'btn ghost sm', onclick:() => { st.cat = st.cat === c ? '' : c; draw(); }}, c)), qi, ss), out);
+}
+function plansView(onSub) {
+  return h('div', {class:'plans'}, PLANS.map(p => h('div', {class:'plan' + (p.hi ? ' hi' : '')}, h('h2', {}, p.name), h('div', {class:'price'}, inr(p.price)), h('p', {class:'muted'}, p.days + ' days'), h('ul', {}, p.features.map(f => h('li', {}, f))),
+    h('button', {class:'btn', style:'width:100%', onclick:() => onSub(p)}, 'Subscribe'))));
+}
+function subscribe(p) {
+  // FUTURE MEMBERSHIP + PAYMENT INTEGRATION PLACEHOLDER
+  // Create a subscription order on a secure backend; activate membership only after server-verified payment.
+  modal('Subscribe (demo)', demoBanner('No payment is collected and no membership is activated.'), h('p', {}, p.name + ' - ' + inr(p.price) + ' for ' + p.days + ' days'), h('button', {class:'btn', onclick:() => { notify('Membership order (demo)', p.name + ': not activated.'); dlg.close(); }}, 'Preview confirmation'));
+}
+
+/* ---------- Checkout (DEMO) ---------- */
+function checkout(p) {
+  /* FUTURE PAYMENT INTEGRATION PLACEHOLDER
+     Connect an eligible payment provider through a secure backend.
+     Verify payment confirmation using trusted server-side events.
+     Never expose private API keys or secrets in this HTML file.
+     Never trust a payment status supplied by the browser.
+     Release paid downloads only after confirmed payment. */
+  const nm = h('input', {id:'cn', autocomplete:'name'}), em = h('input', {id:'ce', type:'email', autocomplete:'email'}), box = h('div');
+  const form = h('div', {}, demoBanner('DEMO CHECKOUT. No money is charged and no order is paid.'), h('div', {class:'panel'}, h('b', {}, p.name), h('p', {class:'muted'}, 'Seller: ' + storeOf(p.store).name), h('h2', {}, inr(p.price))),
+    field('Your name', nm, 'cn'), field('Email', em, 'ce'), h('button', {class:'btn', onclick:e => {
+      if (!(setErr('cn', nm.value.trim() ? '' : 'Enter your name.') & setErr('ce', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value) ? '' : 'Enter a valid email.'))) return;
+      e.target.replaceWith(h('span', {}, h('span', {class:'spin'}), ' Creating demo order...'));
+      setTimeout(() => {
+        const id = 'DEMO-' + (2000 + MEM.orders.length);
+        MEM.orders.unshift({id, prod:p.name}); notify('Order notification (demo)', id + ' created. Not paid.');
+        form.replaceWith(h('div', {}, demoBanner('Simulated result. Payment has NOT been made.'), h('h3', {}, 'Demo order ' + id), h('p', {}, h('span', {class:'chip off'}, 'Payment: not verified'), ' ', h('span', {class:'chip bad'}, 'Delivery: locked')),
+          h('div', {class:'panel'}, h('b', {}, 'Delivery preview (DEMO ONLY)'), h('p', {class:'muted'}, 'After verified payment, a protected download link would appear here. Secure file storage and expiring links need a backend or file-delivery service.'), h('button', {class:'btn', disabled:true}, 'Download locked'))));
+      }, 900);
+    }}, 'Place demo order'));
+  modal('Demo checkout', form);
+}
+
+/* ---------- Seller dashboard ---------- */
+const SECTIONS = [['overview','Overview'],['store','My Store'],['add','Add Product'],['products','My Products'],['orders','Orders'],['analytics','Sales Analytics'],['membership','Membership'],['settings','Settings']];
+function dashView(sec, arg) {
+  if (!S.store.saved && sec === 'overview') sec = 'store';   // first visit: store setup wizard
+  const side = h('aside', {class:'side', id:'side', 'aria-label':'Dashboard'}, SECTIONS.map(([k, t]) => h('button', {class: k === sec || (k === 'add' && sec === 'edit') ? 'on' : '', onclick:() => go('dash/' + k)}, t)), h('button', {onclick:logout}, 'Logout'));
+  const views = {overview, store:storeForm, add:() => productForm(), edit:() => productForm(arg), products:myProducts, orders:ordersView, analytics, membership:() => h('div', {}, h('h1', {}, 'Membership'), demoBanner('Current plan: none (demo). Purchases are not processed.'), plansView(subscribe)), settings};
+  return h('div', {class:'dash'}, side, h('main', {id:'main'}, h('button', {class:'btn ghost sm sbtn', onclick:() => side.classList.toggle('open')}, 'Dashboard menu'), (views[sec] || overview)()));
+}
+function overview() {
+  const pub = S.mine.filter(p => p.status === 'published').length;
+  const st = [['Total products', S.mine.length], ['Published', pub], ['Total orders (demo)', DEMO_ORDERS.length], ['Total sales (demo)', inr(DEMO_ORDERS.filter(o => o.os === 'Completed').reduce((a, o) => a + o.amt, 0))], ['Store views (demo)', '1,284'], ['Membership', 'None (demo)']];
+  return h('div', {}, h('h1', {}, 'Welcome, ' + S.user.name), demoBanner('Orders, sales and views are sample data, not real transactions.'), h('div', {class:'stats'}, st.map(([l, v]) => h('div', {class:'stat'}, h('b', {}, v), h('small', {class:'muted'}, l)))),
+    h('div', {class:'row'}, h('button', {class:'btn', onclick:() => go('dash/add')}, 'Add product'), h('button', {class:'btn ghost', onclick:() => go('store/me')}, 'Preview store')));
+}
+function storeForm() {
+  const first = !S.store.saved, d = {...S.store}; let logo = MEM.logo;
+  const nm = h('input', {id:'sn', value:d.name}), ds = h('textarea', {id:'sd'}, d.desc), up = h('input', {id:'su', value:d.upi, placeholder:'name@bank'});
+  const pk = picker([[1,1]], logo, u => logo = u);
+  return h('div', {}, h('h1', {}, first ? 'Set up your store' : 'My Store'), first ? h('p', {class:'muted'}, 'Add your store details to start publishing products.') : '',
+    field('Store name', h('div', {}, nm, counter(nm, 40)), 'sn'), h('div', {class:'field'}, h('label', {}, 'Store logo (square 1:1)'), pk), field('Store description', h('div', {}, ds, counter(ds, 200)), 'sd'), field('UPI ID', up, 'su'),
+    demoBanner('A UPI ID does not verify payments. Real payment collection needs a payment provider and backend. // FUTURE PAYMENT INTEGRATION PLACEHOLDER'),
+    h('div', {class:'row'}, h('button', {class:'btn', onclick:() => {
+      let ok = setErr('sn', nm.value.trim() ? '' : 'Store name is required.');
+      ok = setErr('sd', ds.value.trim() ? '' : 'Store description is required.') && ok;
+      ok = setErr('su', !up.value.trim() || /^[\w.\-]{2,256}@[A-Za-z]{2,64}$/.test(up.value.trim()) ? '' : 'UPI ID should look like name@bank.') && ok;
+      if (!ok) return; Object.assign(S.store, {name:nm.value.trim(), desc:ds.value.trim(), upi:up.value.trim(), saved:true}); MEM.logo = logo; save(); toast('Store saved'); go('dash/overview');
+    }}, 'Save store'), h('button', {class:'btn ghost', onclick:() => go('store/me')}, 'Preview store'), h('button', {class:'btn ghost', onclick:() => render(true)}, 'Cancel changes')));
+}
+function productForm(id) {
+  const ed = id ? S.mine.find(p => p.id === id) : null;
+  const d = ed ? {...ed, kw:[...ed.kw]} : {name:'', desc:'', kw:[], cat:S.cats[0], price:'', file:''};
+  let img = ed ? MEM.imgs[ed.id] : null;
+  const nm = h('input', {id:'pn', value:d.name}), ds = h('textarea', {id:'pd'}, d.desc), pr = h('input', {id:'pp', type:'number', min:1, step:'any', value:d.price});
+  const tags = h('div'), ki = h('input', {id:'pk', placeholder:'Type keywords, press comma or Enter'}), fn = h('p', {class:'muted'}, d.file || 'No file selected');
+  const drawTags = () => tags.replaceChildren(d.kw.map((k, i) => h('span', {class:'tag'}, k, h('button', {type:'button', 'aria-label':'Remove ' + k, onclick:() => { d.kw.splice(i, 1); drawTags(); }}, '\u00D7'))));
+  const addKw = () => { ki.value.split(',').map(s => s.trim().toLowerCase()).filter(s => s && !d.kw.includes(s)).forEach(s => d.kw.push(s)); ki.value = ''; drawTags(); };
+  ki.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addKw(); } }); ki.addEventListener('blur', addKw);
+  const cs = h('select', {id:'pc'}, S.cats.map(c => h('option', {value:c, selected:c === d.cat}, c))), nc = h('input', {placeholder:'New category', 'aria-label':'New category'});
+  const fi = h('input', {type:'file', class:'sr', 'aria-label':'Product file', onchange:e => { const f = e.target.files[0]; if (f) { d.file = f.name; fn.textContent = f.name; } }});
+  const st = h('select', {id:'ps'}, ['draft','published'].map(s => h('option', {value:s, selected:(ed ? ed.status : 'draft') === s}, s === 'draft' ? 'Draft' : 'Published'))), pk = picker([[16,9],[1,1]], img, u => img = u);
+  function collect(status, strict) {
+    addKw(); let ok = setErr('pn', nm.value.trim() ? '' : 'Product name is required.');
+    ok = setErr('pd', ds.value.trim() ? '' : 'Description is required.') && ok;
+    ok = setErr('pp', +pr.value > 0 ? '' : 'Enter a price above \u20B90.') && ok;
+    if (strict) ok = setErr('pi', img ? '' : 'Add a 16:9 or 1:1 image before publishing.') && ok;
+    return ok ? {name:nm.value.trim(), desc:ds.value.trim(), price:+pr.value, cat:cs.value, kw:d.kw, file:d.file, status} : null;
+  }
+  const commit = status => {
+    const rec = collect(status, status === 'published'); if (!rec) return;
+    if (ed) Object.assign(ed, rec); else { const n = {...rec, id:'u' + Date.now(), created:Date.now(), store:'me'}; S.mine.unshift(n); MEM.imgs[n.id] = img; }
+    if (ed) MEM.imgs[ed.id] = img; save(); toast(status === 'published' ? 'Published' : 'Draft saved'); go('dash/products');
+  };
+  return h('div', {}, h('h1', {}, ed ? 'Edit product' : 'Add product'),
+    h('div', {class:'field'}, h('label', {}, 'Product image (16:9 or 1:1)'), pk, h('small', {class:'muted'}, 'Demo images last for this session only.'), h('div', {class:'err', id:'e-pi', role:'alert'})),
+    field('Product name', h('div', {}, nm, counter(nm, 60)), 'pn'), field('Description', h('div', {}, ds, counter(ds, 500)), 'pd'), field('Keywords', h('div', {}, ki, tags), 'pk'),
+    field('Category', h('div', {class:'row'}, cs, h('div', {class:'row'}, nc, h('button', {type:'button', class:'btn ghost sm', onclick:() => { const v = nc.value.trim(); if (v && !S.cats.includes(v)) { S.cats.push(v); cs.append(h('option', {value:v, selected:true}, v)); save(); } nc.value = ''; }}, 'Add category'))), 'pc'),
+    field('Price (INR)', pr, 'pp'),
+    h('div', {class:'field'}, h('label', {}, 'Download file'), fn, h('div', {class:'row'}, h('button', {type:'button', class:'btn ghost sm', onclick:() => fi.click()}, 'Choose / replace file'), h('button', {type:'button', class:'btn ghost sm', onclick:() => { d.file = ''; fn.textContent = 'No file selected'; }}, 'Remove file')), fi,
+      h('small', {class:'muted'}, 'Selecting a file here does not upload, host or securely deliver it. Secure storage needs a backend.')),
+    field('Status', st, 'ps'),
+    h('div', {class:'row'}, h('button', {class:'btn ghost', onclick:() => commit('draft')}, 'Save draft'), h('button', {class:'btn', onclick:() => commit('published')}, 'Publish product'),
+      h('button', {class:'btn ghost', onclick:() => { const r = collect(st.value, false); if (r) modal('Preview', card({...r, id:ed ? ed.id : 'preview', store:'me', sold:0, pop:0, created:Date.now()})); }}, 'Preview product'), h('button', {class:'btn ghost', onclick:() => go('dash/products')}, 'Cancel')));
+}
+const PF = {q:'', cat:'', st:'', sort:'date'};
+function myProducts() {
+  const out = h('div');
+  const draw = () => {
+    const q = PF.q.toLowerCase(); const by = {name:(a, b) => a.name.localeCompare(b.name), price:(a, b) => a.price - b.price, date:(a, b) => b.created - a.created};
+    const l = S.mine.filter(p => (!q || p.name.toLowerCase().includes(q)) && (!PF.cat || p.cat === PF.cat) && (!PF.st || p.status === PF.st)).sort(by[PF.sort]);
+    if (!l.length) return out.replaceChildren(h('div', {class:'empty'}, h('h3', {}, S.mine.length ? 'No matching products' : 'No products yet'), h('p', {class:'muted'}, 'Add your first digital product to get started.'), h('button', {class:'btn', onclick:() => go('dash/add')}, 'Add product')));
+    out.replaceChildren(h('div', {class:'tw'}, h('table', {}, h('thead', {}, h('tr', {}, ['Image','Name','Price','Category','Status','Created','Actions'].map(c => h('th', {}, c)))), h('tbody', {}, l.map(p => h('tr', {},
+      h('td', {}, h('div', {class:'thumb'}, art(p))), h('td', {}, p.name), h('td', {}, inr(p.price)), h('td', {}, p.cat), h('td', {}, h('span', {class:'chip ' + (p.status === 'published' ? 'ok' : 'off')}, p.status === 'published' ? 'Published' : 'Draft')), h('td', {}, fdate(p.created)),
+      h('td', {}, h('div', {class:'row'}, h('button', {class:'btn ghost sm', onclick:() => go('dash/edit/' + p.id)}, 'Edit'), h('button', {class:'btn ghost sm', onclick:() => modal('Preview', card({...p, store:'me', sold:0}))}, 'Preview'),
+        h('button', {class:'btn ghost sm', onclick:() => { p.status = p.status === 'published' ? 'draft' : 'published'; save(); toast(p.status === 'published' ? 'Published' : 'Unpublished'); draw(); }}, p.status === 'published' ? 'Unpublish' : 'Publish'),
+        h('button', {class:'btn danger sm', onclick:async () => { if (await confirmBox('Delete "' + p.name + '"? This cannot be undone.')) { S.mine.splice(S.mine.indexOf(p), 1); delete MEM.imgs[p.id]; save(); toast('Deleted'); draw(); } }}, 'Delete')))))))));
+  };
+  const bind = (k, c) => { c.addEventListener('input', () => { PF[k] = c.value; draw(); }); return c; };
+  draw();
+  return h('div', {}, h('div', {class:'row sb'}, h('h1', {}, 'My products'), h('button', {class:'btn', onclick:() => go('dash/add')}, 'Add product')),
+    h('div', {class:'filters'}, bind('q', h('input', {type:'search', placeholder:'Search products', 'aria-label':'Search', value:PF.q})),
+      bind('cat', h('select', {'aria-label':'Category'}, h('option', {value:''}, 'All categories'), S.cats.map(c => h('option', {value:c, selected:PF.cat === c}, c)))),
+      bind('st', h('select', {'aria-label':'Status'}, [['','All statuses'],['published','Published'],['draft','Draft']].map(([v, t]) => h('option', {value:v, selected:PF.st === v}, t)))),
+      bind('sort', h('select', {'aria-label':'Sort'}, [['date','Newest'],['name','Name'],['price','Price']].map(([v, t]) => h('option', {value:v, selected:PF.sort === v}, t))))), out);
+}
+const OF = {q:'', st:'', key:'date', dir:-1, n:8};
+function ordersView() {
+  // FUTURE BACKEND: load verified orders from a server here (e.g. fetch('/api/orders') with real auth).
+  const out = h('div');
+  const draw = () => {
+    const q = OF.q.toLowerCase(), l = DEMO_ORDERS.filter(o => (!q || (o.id + o.prod + o.cust).toLowerCase().includes(q)) && (!OF.st || o.os === OF.st)).sort((a, b) => (a[OF.key] > b[OF.key] ? 1 : -1) * OF.dir);
+    const cols = [['id','Order ID'],['prod','Product'],['cust','Customer'],['date','Date'],['amt','Amount'],['os','Order status'],['ps','Payment'],['ds','Delivery']];
+    out.replaceChildren(l.length ? h('div', {class:'tw'}, h('table', {}, h('thead', {}, h('tr', {}, cols.map(([k, t]) => h('th', {}, h('button', {onclick:() => { OF.dir = OF.key === k ? -OF.dir : 1; OF.key = k; draw(); }}, t + (OF.key === k ? (OF.dir > 0 ? ' \u25B2' : ' \u25BC') : '')))))),
+      h('tbody', {}, l.slice(0, OF.n).map(o => h('tr', {}, h('td', {}, o.id), h('td', {}, o.prod), h('td', {}, o.cust), h('td', {}, fdate(o.date)), h('td', {}, inr(o.amt)), h('td', {}, o.os), h('td', {}, o.ps), h('td', {}, o.ds)))))) : h('div', {class:'empty'}, 'No orders match.'),
+      l.length > OF.n ? h('p', {style:'text-align:center'}, h('button', {class:'btn ghost', onclick:() => { OF.n += 8; draw(); }}, 'Load more')) : '');
+  };
+  draw();
+  return h('div', {}, h('h1', {}, 'Orders'), demoBanner('Sample orders only. None are real purchases.'), h('div', {class:'filters'},
+    h('input', {type:'search', 'aria-label':'Search orders', placeholder:'Search orders', oninput:e => { OF.q = e.target.value; OF.n = 8; draw(); }}),
+    h('select', {'aria-label':'Status', onchange:e => { OF.st = e.target.value; draw(); }}, ['','Completed','Pending','Cancelled'].map(v => h('option', {value:v}, v || 'All statuses')))), out);
+}
+function analytics() {
+  const m = [['Apr',12],['May',18],['Jun',15],['Jul',24],['Aug',30],['Sep',27],['Oct',35]], mx = 35, done = DEMO_ORDERS.filter(o => o.os === 'Completed');
+  return h('div', {}, h('h1', {}, 'Sales analytics'), demoBanner('All figures are sample data. They are not real orders or revenue.'),
+    h('div', {class:'stats'}, [['Total orders (demo)', DEMO_ORDERS.length], ['Sample revenue (demo)', inr(done.reduce((a, o) => a + o.amt, 0))]].map(([l, v]) => h('div', {class:'stat'}, h('b', {}, v), h('small', {class:'muted'}, l)))),
+    h('div', {class:'panel'}, h('h2', {}, 'Sales trend (demo orders per month)'), h('div', {class:'bars', style:'margin-bottom:2rem', role:'img', 'aria-label':'Bar chart of demo monthly orders'}, m.map(([k, v]) => h('div', {style:'height:' + v / mx * 100 + '%', title:v + ' orders'}, h('span', {}, k))))),
+    h('div', {class:'panel'}, h('h2', {}, 'Best-performing products (demo)'), SAMPLE.slice().sort(SORTS.best).slice(0, 4).map(p => h('p', {}, p.name + ': ' + p.sold + ' sample sales'))),
+    h('div', {class:'panel'}, h('h2', {}, 'Recent orders (demo)'), DEMO_ORDERS.slice(0, 5).map(o => h('p', {}, o.id + ' | ' + o.prod + ' | ' + inr(o.amt) + ' | ' + o.os))));
+}
+function settings() {
+  const nm = h('input', {id:'an', value:S.user.name}), sn = h('input', {id:'ssn', value:S.store.name}), sd = h('textarea', {id:'ssd'}, S.store.desc), up = h('input', {id:'ssu', value:S.store.upi});
+  const prefs = [['orders','Order notifications'],['login','Login alerts'],['marketing','Product news and offers'],['analytics','Allow usage analytics']];
+  const cbs = prefs.map(([k, t]) => h('p', {}, h('label', {}, h('input', {type:'checkbox', checked:S.prefs[k]}), ' ' + t)));
+  return h('div', {}, h('h1', {}, 'Settings'), demoBanner('Demo settings stay in this browser only. Passwords and payment credentials are never shown or stored here.'),
+    h('div', {class:'panel'}, h('h2', {}, 'Account information'), field('Display name', nm, 'an'), h('p', {class:'muted'}, 'Email: ' + S.user.email + ' (demo profile)')),
+    h('div', {class:'panel'}, h('h2', {}, 'Store information'), field('Store name', sn, 'ssn'), field('Store description', sd, 'ssd'), field('UPI ID', up, 'ssu'), h('div', {class:'row'}, h('span', {}, 'Store logo: ' + (MEM.logo ? 'set' : 'not set')), h('button', {class:'btn ghost sm', onclick:() => go('dash/store')}, 'Change logo'))),
+    h('div', {class:'panel'}, h('h2', {}, 'Notification preferences'), cbs), h('div', {class:'panel'}, h('h2', {}, 'Privacy'), h('p', {class:'muted'}, 'This prototype keeps non-sensitive demo data in your browser. Clear it any time.'),
+      h('button', {class:'btn ghost sm', onclick:async () => { if (await confirmBox('Clear all demo data stored in this browser?', 'Clear data')) { localStorage.removeItem('dph'); S = defaults(); toast('Demo data cleared'); go('home'); } }}, 'Clear demo data')),
+    h('div', {class:'panel'}, h('h2', {}, 'Membership information'), h('p', {}, 'Current plan: none (demo).'), h('button', {class:'btn ghost sm', onclick:() => go('dash/membership')}, 'View plans')),
+    h('div', {class:'row'}, h('button', {class:'btn', onclick:() => {
+      let ok = setErr('an', nm.value.trim() ? '' : 'Enter a name.'); ok = setErr('ssn', sn.value.trim() ? '' : 'Store name is required.') && ok;
+      ok = setErr('ssu', !up.value.trim() || /^[\w.\-]{2,256}@[A-Za-z]{2,64}$/.test(up.value.trim()) ? '' : 'UPI ID should look like name@bank.') && ok; if (!ok) return;
+      S.user.name = nm.value.trim(); Object.assign(S.store, {name:sn.value.trim(), desc:sd.value.trim(), upi:up.value.trim(), saved:true}); cbs.forEach((c, i) => S.prefs[prefs[i][0]] = c.querySelector('input').checked); save(); toast('Settings saved');
+    }}, 'Save settings'), h('button', {class:'btn ghost', onclick:() => render(true)}, 'Cancel')));
+}
+
+/* ---------- Router ---------- */
+function pageFor(r, a) {
+  if (r === 'explore') return exploreView();
+  if (r === 'best') { F.sort = 'best'; F.cat = ''; return exploreView(); }
+  if (r === 'categories') return h('div', {class:'wrap sec'}, h('h1', {}, 'Categories'), catsView());
+  if (r === 'membership') return h('div', {class:'wrap sec'}, h('h1', {}, 'Membership'), demoBanner('Membership checkout is a demo. Benefits are editable placeholders.'), plansView(subscribe));
+  if (r === 'product') return productView(a);
+  if (r === 'store') return storeView(a || 'me');
+  if (r === 'sell') return h('div', {class:'wrap sec'}, h('h1', {}, 'Become a seller'), h('p', {class:'muted'}, 'Create a store, upload products and manage orders from one dashboard.'),
+    h('button', {class:'btn', onclick:() => { S.user.role = 'seller'; save(); go('dash/overview'); }}, S.user.role === 'seller' ? 'Open seller dashboard' : 'Switch to seller (demo)'));
+  return homeView();
+}
+function render(keep) {
+  const [r, a, b] = (location.hash.slice(1) || 'home').split('/');
+  $app.replaceChildren();
+  if (dlg.open) dlg.close();
+  if (!S.user) { $app.append(authView()); return; }
+  if (r === 'dash' && S.user.role !== 'seller') { go('sell'); return; }
+  $app.append(header(), r === 'dash' ? dashView(a || 'overview', b) : h('main', {id:'main'}, pageFor(r, a)), footer());
+  if (!keep) window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', () => render());
+render();
+</script>
+</body>
+</html>
